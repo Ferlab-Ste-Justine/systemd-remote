@@ -18,6 +18,13 @@ import (
 
 const SYSTEMD_UNIT_FILES_PATH = "/etc/systemd/system"
 
+var (
+	ErrEmptyUnitName = errors.New("Unit name was empty")
+	ErrJobIsNotService = errors.New("Units type other than .service was flagged as a job")
+	ErrJobIsFlaggedOn = errors.New("Job was flagged as on")
+	ErrJobFlagChanged = errors.New("Job flag was changed")
+)
+
 type Unit struct {
 	Name string
 	On   bool
@@ -26,15 +33,15 @@ type Unit struct {
 
 func (u *Unit) Validate() error {
 	if u.Name == "" {
-		return errors.New("Unit name cannot be empty")
+		return ErrEmptyUnitName
 	}
 
 	if (!strings.HasSuffix(u.Name, ".service")) && u.Job {
-		return errors.New("Only units of type .service can be jobs")
+		return ErrJobIsNotService
 	}
 
 	if u.On && u.Job {
-		return errors.New("A unit of type .service that is flagged as a job cannot be 'on'. Set its timer resource to 'on' instead.")
+		return ErrJobIsFlaggedOn
 	}
 
 	return nil
@@ -332,7 +339,7 @@ func (man *UnitsManager) updateUnitStatus(conn *dbus.Conn, unitsStatus map[strin
 	} else {
 		//Update
 		if new.IsPersistentService() != old.IsPersistentService() {
-			return errors.New("Cannot change the job status of a unit. This workflow is not currently supported")
+			return ErrJobFlagChanged
 		}
 
 		unitName = new.Name

@@ -2,9 +2,12 @@ package main
 
 import (
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/Ferlab-Ste-Justine/systemd-remote/config"
 	"github.com/Ferlab-Ste-Justine/systemd-remote/logger"
+	"github.com/Ferlab-Ste-Justine/systemd-remote/server"
 	"github.com/Ferlab-Ste-Justine/systemd-remote/units"
 )
 
@@ -33,5 +36,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	//manager.Apply(map[string]string{})
+	serveCancel, serveErrCh := server.Serve(conf.Server, manager, log)
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+	go func() {
+		sig := <-sigChan
+		log.Warnf("Caught signal %s. Terminating.", sig.String())
+		serveCancel()
+	}()
+
+	serveErr := <-serveErrCh
+	if serveErr != nil {
+		serveCancel()
+		log.Errorf(serveErr.Error())
+		os.Exit(1)
+	}
 }
