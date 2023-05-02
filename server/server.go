@@ -119,7 +119,7 @@ func Serve(serverConf config.ServerConfig, man units.UnitsManager, log logger.Lo
 	go func() {
 		defer close(errChan)
 
-		listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", serverConf.BindIp, serverConf.Port))
+		listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", serverConf.Address, serverConf.Port))
 		if err != nil {
 			errChan <- err
 			return

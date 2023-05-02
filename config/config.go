@@ -18,9 +18,9 @@ type ServerTlsConfig struct {
 }
 
 type ServerConfig struct{
-	Port   int64
-	BindIp string           `yaml:"bind_ip"`
-	Tls    ServerTlsConfig
+	Port    int64
+	Address string
+	Tls     ServerTlsConfig
 }
 
 type Config struct{
