@@ -20,10 +20,14 @@ const SYSTEMD_UNIT_FILES_PATH = "/etc/systemd/system"
 
 var (
 	ErrEmptyUnitName = errors.New("Unit name was empty")
-	ErrJobIsNotService = errors.New("Units type other than .service was flagged as a job")
+	ErrJobIsNotService = errors.New("Unit type other than .service was flagged as a job")
 	ErrJobIsFlaggedOn = errors.New("Job was flagged as on")
 	ErrJobFlagChanged = errors.New("Job flag was changed")
 )
+
+func IsApiContractError(err error) bool {
+	return err == ErrEmptyUnitName || err == ErrJobIsNotService || err == ErrJobIsFlaggedOn || err == ErrJobFlagChanged
+}
 
 type Unit struct {
 	Name string
