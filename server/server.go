@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 	"io"
 	"io/ioutil"
 	"net"
@@ -40,15 +40,14 @@ func getTlsConfig(opts config.ServerTlsConfig) (credentials.TransportCredentials
 
 	//Tls confs
 	tlsConf := &tls.Config{
-		ClientAuth: tls.RequireAnyClientCert,
+		ClientAuth:         tls.RequireAnyClientCert,
 		InsecureSkipVerify: false,
-		Certificates: []tls.Certificate{certData},
-		ClientCAs: ca,
+		Certificates:       []tls.Certificate{certData},
+		ClientCAs:          ca,
 	}
 
 	return credentials.NewTLS(tlsConf), nil
 }
-
 
 type Server struct {
 	keypb.KeyPushServiceServer
@@ -70,7 +69,7 @@ func (s *Server) SendKeyDiff(stream keypb.KeyPushService_SendKeyDiffServer) erro
 		}
 
 		select {
-		case result := <- keyDiffCh:
+		case result := <-keyDiffCh:
 			code := codes.Unknown
 			if keypb.IsApiContractError(result.Error) {
 				code = codes.InvalidArgument
@@ -82,7 +81,7 @@ func (s *Server) SendKeyDiff(stream keypb.KeyPushService_SendKeyDiffServer) erro
 		reqCh <- req
 	}
 
-	result := <- keyDiffCh
+	result := <-keyDiffCh
 	if result.Error != nil {
 		code := codes.Unknown
 		if keypb.IsApiContractError(result.Error) {
@@ -124,7 +123,7 @@ func Serve(serverConf config.ServerConfig, man units.UnitsManager, log logger.Lo
 			errChan <- err
 			return
 		}
-		
+
 		tlsConf, tlsErr := getTlsConfig(serverConf.Tls)
 		if tlsErr != nil {
 			errChan <- err
@@ -133,7 +132,7 @@ func Serve(serverConf config.ServerConfig, man units.UnitsManager, log logger.Lo
 
 		var opts []grpc.ServerOption
 		opts = append(opts, grpc.Creds(tlsConf))
-	
+
 		grpcServer := grpc.NewServer(opts...)
 		keypb.RegisterKeyPushServiceServer(grpcServer, &Server{Manager: man})
 		serveErr := grpcServer.Serve(listener)

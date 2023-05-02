@@ -12,21 +12,21 @@ import (
 )
 
 type ServerTlsConfig struct {
-	CaCert       string `yaml:"ca_cert"`
-	ServerCert   string `yaml:"server_cert"`
-	ServerKey    string `yaml:"server_key"`
+	CaCert     string `yaml:"ca_cert"`
+	ServerCert string `yaml:"server_cert"`
+	ServerKey  string `yaml:"server_key"`
 }
 
-type ServerConfig struct{
+type ServerConfig struct {
 	Port    int64
 	Address string
 	Tls     ServerTlsConfig
 }
 
-type Config struct{
-	UnitsConfigPath string       `yaml:"units_config_path"`
-	LogLevel       string        `yaml:"log_level"`
-	Server         ServerConfig
+type Config struct {
+	UnitsConfigPath string `yaml:"units_config_path"`
+	LogLevel        string `yaml:"log_level"`
+	Server          ServerConfig
 }
 
 func (c *Config) GetLogLevel() int64 {

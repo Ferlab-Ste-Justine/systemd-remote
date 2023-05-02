@@ -11,18 +11,18 @@ import (
 
 	"github.com/Ferlab-Ste-Justine/systemd-remote/logger"
 
-	"github.com/coreos/go-systemd/v22/dbus"
 	"github.com/Ferlab-Ste-Justine/etcd-sdk/client"
+	"github.com/coreos/go-systemd/v22/dbus"
 	yaml "gopkg.in/yaml.v2"
 )
 
 const SYSTEMD_UNIT_FILES_PATH = "/etc/systemd/system"
 
 var (
-	ErrEmptyUnitName = errors.New("Unit name was empty")
+	ErrEmptyUnitName   = errors.New("Unit name was empty")
 	ErrJobIsNotService = errors.New("Unit type other than .service was flagged as a job")
-	ErrJobIsFlaggedOn = errors.New("Job was flagged as on")
-	ErrJobFlagChanged = errors.New("Job flag was changed")
+	ErrJobIsFlaggedOn  = errors.New("Job was flagged as on")
+	ErrJobFlagChanged  = errors.New("Job flag was changed")
 )
 
 func IsApiContractError(err error) bool {
@@ -75,8 +75,8 @@ type Units map[string]Unit
 
 type UnitsManager struct {
 	FilePath string
-	Logger logger.Logger
-	units *Units
+	Logger   logger.Logger
+	units    *Units
 }
 
 func IsPersistentService(unitName string, units *Units) bool {
@@ -156,7 +156,7 @@ func (man *UnitsManager) InsertUnits(conn *dbus.Conn, inserts map[string]string)
 	if len(inserts) == 0 {
 		return nil
 	}
-	
+
 	unitsStatus, unitsStatusErr := getUnitsStatus(conn)
 	if unitsStatusErr != nil {
 		return unitsStatusErr
@@ -185,7 +185,7 @@ func (man *UnitsManager) InsertUnits(conn *dbus.Conn, inserts map[string]string)
 		} else {
 			man.Logger.Infof("Updating unit file %s.", key)
 		}
-		
+
 		writeErr := ioutil.WriteFile(unitPath, []byte(val), 0640)
 		if writeErr != nil {
 			return writeErr
@@ -198,7 +198,7 @@ func (man *UnitsManager) InsertUnits(conn *dbus.Conn, inserts map[string]string)
 
 		if IsPersistentService(key, man.units) && IsRunningService(key, unitsStatus) {
 			man.Logger.Infof("Restarting service %s.", key)
-			
+
 			output := make(chan string)
 			defer close(output)
 			_, restartErr := conn.RestartUnit(key, "replace", output)
@@ -216,7 +216,7 @@ func (man *UnitsManager) UpdateUnits(conn *dbus.Conn, updates map[string]string)
 	if len(updates) == 0 {
 		return nil
 	}
-	
+
 	unitsStatus, unitsStatusErr := getUnitsStatus(conn)
 	if unitsStatusErr != nil {
 		return unitsStatusErr
@@ -235,7 +235,7 @@ func (man *UnitsManager) UpdateUnits(conn *dbus.Conn, updates map[string]string)
 			if !errors.Is(statErr, os.ErrNotExist) {
 				return statErr
 			}
-	
+
 			man.Logger.Warnf("Update: unit file %s does not exist. will create it instead.", key)
 			created = true
 		}
@@ -245,7 +245,7 @@ func (man *UnitsManager) UpdateUnits(conn *dbus.Conn, updates map[string]string)
 		} else {
 			man.Logger.Infof("Updating unit file %s.", key)
 		}
-		
+
 		writeErr := ioutil.WriteFile(unitPath, []byte(val), 0640)
 		if writeErr != nil {
 			return writeErr
@@ -258,7 +258,7 @@ func (man *UnitsManager) UpdateUnits(conn *dbus.Conn, updates map[string]string)
 
 		if IsPersistentService(key, man.units) && IsRunningService(key, unitsStatus) {
 			man.Logger.Infof("Restarting service %s.", key)
-			
+
 			output := make(chan string)
 			defer close(output)
 			_, restartErr := conn.RestartUnit(key, "replace", output)
@@ -268,7 +268,7 @@ func (man *UnitsManager) UpdateUnits(conn *dbus.Conn, updates map[string]string)
 			<-output
 		}
 	}
-	
+
 	return nil
 }
 
@@ -289,14 +289,14 @@ func (man *UnitsManager) DeleteUnits(conn *dbus.Conn, deletions []string) error 
 			if !errors.Is(statErr, os.ErrNotExist) {
 				return statErr
 			}
-	
+
 			man.Logger.Warnf("Delete: units configuration file %s not found. Skipping deletion.", key)
 			continue
 		}
 
 		if IsRunningService(key, unitsStatus) {
 			man.Logger.Infof("Stopping and disabling service %s.", key)
-			
+
 			output := make(chan string)
 			defer close(output)
 			_, stopErr := conn.StopUnit(key, "replace", output)
@@ -366,10 +366,10 @@ func (man *UnitsManager) updateUnitStatus(conn *dbus.Conn, unitsStatus map[strin
 		}
 		<-output
 	}
-	
+
 	if action == "stop" && IsRunningService(unitName, unitsStatus) {
 		man.Logger.Infof("Stopping and disabling service %s.", unitName)
-			
+
 		output := make(chan string)
 		defer close(output)
 		_, stopErr := conn.StopUnit(unitName, "replace", output)
@@ -431,13 +431,13 @@ func (man *UnitsManager) ApplyUnitsConf(conn *dbus.Conn, newConf *Units) error {
 			(*man.units)[key] = valNew
 		}
 	}
-	
+
 	return nil
 }
 
 func ExtractUnitsConfig(diff *client.KeyDiff) (*Units, error) {
 	var u Units
-	
+
 	if val, ok := diff.Inserts["units.yml"]; ok {
 		delete(diff.Inserts, "units.yml")
 		yamlErr := yaml.Unmarshal([]byte(val), &u)
@@ -452,7 +452,7 @@ func ExtractUnitsConfig(diff *client.KeyDiff) (*Units, error) {
 
 	for idx, val := range diff.Deletions {
 		if val == "units.yml" {
-			diff.Deletions = append(diff.Deletions[0:idx], diff.Deletions[idx + 1:]...)
+			diff.Deletions = append(diff.Deletions[0:idx], diff.Deletions[idx+1:]...)
 			u = Units(map[string]Unit{})
 			return &u, nil
 		}
@@ -475,7 +475,7 @@ func getUnitsStatus(conn *dbus.Conn) (map[string]dbus.UnitStatus, error) {
 		}
 	}
 
-	return result, nil;
+	return result, nil
 }
 
 func (man *UnitsManager) Apply(diff client.KeyDiff) error {
