@@ -50,35 +50,43 @@ func getTlsConfig(opts config.ServerTlsConfig) (credentials.TransportCredentials
 }
 
 type Server struct {
-	keypb.KeyPushServiceServer
+	keypb.UnimplementedKeyPushServiceServer
 	Manager units.UnitsManager
 }
 
 func (s *Server) SendKeyDiff(stream keypb.KeyPushService_SendKeyDiffServer) error {
 	reqCh := make(chan *keypb.SendKeyDiffRequest)
-	defer close(reqCh)
 	keyDiffCh := keypb.ProcessSendKeyDiffRequests(reqCh)
-	for {
-		req, err := stream.Recv()
-		if err == io.EOF {
-			close(reqCh)
-			break
-		}
-		if err != nil {
-			return err
-		}
 
-		select {
-		case result := <-keyDiffCh:
-			code := codes.Unknown
-			if keypb.IsApiContractError(result.Error) {
-				code = codes.InvalidArgument
+	err := func() error {
+		defer close(reqCh)
+		for {
+			req, err := stream.Recv()
+			if err == io.EOF {
+				return nil
 			}
-			return status.New(code, result.Error.Error()).Err()
-		default:
+			if err != nil {
+				return err
+			}
+	
+			select {
+			case result := <-keyDiffCh:
+				code := codes.Unknown
+				if keypb.IsApiContractError(result.Error) {
+					code = codes.InvalidArgument
+				}
+				return status.New(code, result.Error.Error()).Err()
+			default:
+			}
+	
+			reqCh <- req
 		}
 
-		reqCh <- req
+		return nil
+	}()
+	
+	if err != nil {
+		return err
 	}
 
 	result := <-keyDiffCh
@@ -99,7 +107,8 @@ func (s *Server) SendKeyDiff(stream keypb.KeyPushService_SendKeyDiffServer) erro
 		return status.New(code, applyErr.Error()).Err()
 	}
 
-	return nil
+	sendErr := stream.SendAndClose(&keypb.SendKeyDiffResponse{})
+	return sendErr
 }
 
 type StopServer func()
