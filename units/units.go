@@ -329,7 +329,7 @@ func (man *UnitsManager) DeleteUnits(conn *dbus.Conn, deletions []string) error 
 func (man *UnitsManager) updateUnitStatus(conn *dbus.Conn, unitsStatus map[string]dbus.UnitStatus, old *Unit, new *Unit) error {
 	var unitName string
 	var action string
-	if new == nil {
+	if old == nil {
 		//Insert
 		unitName = new.Name
 		action = new.ServiceShould()
@@ -388,6 +388,8 @@ func (man *UnitsManager) updateUnitStatus(conn *dbus.Conn, unitsStatus map[strin
 }
 
 func (man *UnitsManager) ApplyUnitsConf(conn *dbus.Conn, newConf *Units) error {
+	man.Logger.Infof("Applying new units configuration file with %d units.", len(*newConf))
+	
 	unitsStatus, unitsStatusErr := getUnitsStatus(conn)
 	if unitsStatusErr != nil {
 		return unitsStatusErr
