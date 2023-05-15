@@ -133,9 +133,11 @@ func Serve(serverConf config.ServerConfig, man units.UnitsManager, log logger.Lo
 		var opts []grpc.ServerOption
 		opts = append(opts, grpc.Creds(tlsConf))
 
-		grpcServer := grpc.NewServer(opts...)
+		grpcServer = grpc.NewServer(opts...)
 		keypb.RegisterKeyPushServiceServer(grpcServer, &Server{Manager: man})
+		log.Infof("Grpc server listening on %s:%d", serverConf.Address, serverConf.Port)
 		serveErr := grpcServer.Serve(listener)
+		log.Infof("Grpc server Stopped")
 		if serveErr != nil {
 			errChan <- serveErr
 		}
