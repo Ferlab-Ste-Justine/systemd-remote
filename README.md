@@ -23,9 +23,13 @@ It supports 3 kind of files:
 - Timer unit files (files ending with the **.timer** extention)
 - A **units.yml** configuration file
 
-## units.yml
+## Persistent Units
 
-For terminology's sake, we use the term **persistent service** to refer to a timer unit or a service unit that is not a job triggered by a timer.
+For terminology's sake, we use the term **persistent service** to refer to a timer unit or a service unit that:
+- Is not managed by the **units.yml** file
+- Is managed by the **units.yml** file and is not a job triggered by a timer.
+
+## units.yml
 
 The **units.yml** file has the following format:
 
@@ -52,7 +56,27 @@ Additionally, the following rules are enforced:
 
 Whenever a unit file is added, updated or deleted, systemd-remote will always work in the **/etc/systemd/system** directory to enact the change.
 
-Changing unit files will have the accompanying side effects:
-
+Changing unit files will be handled as such:
+  - Insert/Update:
+    - Create/Update the unit file
+    - Reload the systemd daemon
+    - If the unit is a persistent service and active, it is restarted
+  - Deletion:
+    - If the unit is active, it is stopped and disabled
+    - Delete the unit file
+    - Reload the systemd daemon
 
 # Configuration
+
+The path of configuration file for systemd-remote can be defined with the **SYSTEMD_REMOTE_CONFIG_FILE** environment variable. It defaults to a file named **config.yml** in the running directory of the process.
+
+The configuration is in yaml format and takes the following parameters:
+- **units_config_path**: String value indicating the path where systemd-remote should persist changes to its units state (ie, **units.yml**). If no file is found at that path, an empty one will be created.
+- **log_level**: Only logs at this level or importance or greater will be shown. Possible values, in order of importance from least to most, are: debug, info, warn, error
+- **server**: Parameters for the grpc server. It takes the properties shown below.
+  - **port**: Port to listen on
+  - **address**: Address to bind on to listen for incoming traffic
+  - **tls**: Parameters for mtls. It takes the properties shown below.
+    - **ca_cert**: Path to a CA certificate file that will be used to authentify clients
+    - **server_cert**: Path to a server certificate file that will be presented to connecting clients
+    - **server_key**: Path to a private server key file that will be used to authentify the server with the certificate it presents to the clients.
